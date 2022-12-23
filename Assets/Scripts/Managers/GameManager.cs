@@ -4,6 +4,13 @@ using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
 {
+	private enum ScreenStates
+	{
+		StartScreen,
+		GameScreen,
+		EndScreen
+	}
+	
 	[Header("Object Containers")]
 	[SerializeField]
 	private GameObject _menuContainer;
@@ -11,8 +18,10 @@ public class GameManager : MonoBehaviour
 	private GameObject _gameContainer;
 	[SerializeField]
 	private GameObject _gameUIContainer;
-
 	[SerializeField]
+	private GameObject _endScreenContainer;
+
+	[SerializeField, Space(5f)]
 	private List<Mole> _moles;
 
 	[Header("Gameplay values")]
@@ -23,25 +32,25 @@ public class GameManager : MonoBehaviour
 	[SerializeField]
 	private int _timePenaltyMissedMole = 2;
 
-	[Header("UI Fields")]
+	[Header("Other References")]
 	[SerializeField]
 	private UIViewsManager _uiManager;
-
+	[SerializeField]
+	private EndScreenManager _endScreenManager;
+	
 	private float _playTimeSecs = 30f;
 	private float _timeRemainingSecs;
-	
-	private HashSet<Mole> _activeMoles = new HashSet<Mole>();
 
 	private int _score;
+	
 	private bool _playing = false;
 
-	private void Awake()
-	{
-		SetScreenState(false);
-	}
+	private HashSet<Mole> _activeMoles = new HashSet<Mole>();
 
 	private void Start()
 	{
+		SetScreenState(ScreenStates.StartScreen);
+		
 		// If this threshold is set to 0 it will result in an error 
 		if(_activateExtraMoleThreshold <= 0)
 		{
@@ -62,6 +71,9 @@ public class GameManager : MonoBehaviour
 		{
 			_timeRemainingSecs = 0;
 			StopGame();
+			
+			// It is pointless to continue trying to activate new moles, since we have stopped playing
+			return;
 		}
 		_uiManager.UpdateTimer(_timeRemainingSecs);
 
@@ -95,27 +107,48 @@ public class GameManager : MonoBehaviour
 		_uiManager.UpdateScore(_score);
 		_uiManager.UpdateTimer(_timeRemainingSecs);
 		
-		SetScreenState(true);
+		SetScreenState(ScreenStates.GameScreen);
 		
 		_playing = true;
 	}
 
 	private void StopGame()
 	{
+		_playing = false;
+		
 		for(var i = 0; i < _moles.Count; i++)
 		{
 			_moles[i].Deactivate();
+			_activeMoles.Remove(_moles[i]);
 		}
 		
-		_playing = false;
-		SetScreenState(false);
+		_endScreenManager.Initialize(_score);
+		SetScreenState(ScreenStates.EndScreen);
 	}
 
-	private void SetScreenState(bool showGame)
+	private void SetScreenState(ScreenStates screenState)
 	{
-		_menuContainer.SetActive(!showGame);
-		_gameContainer.SetActive(showGame);
-		_gameUIContainer.SetActive(showGame);
+		switch(screenState)
+		{
+			case ScreenStates.StartScreen:
+				_menuContainer.SetActive(true);
+				_gameContainer.SetActive(false);
+				_gameUIContainer.SetActive(false);
+				_endScreenContainer.SetActive(false);
+				break;
+			case ScreenStates.GameScreen:
+				_menuContainer.SetActive(false);
+				_gameContainer.SetActive(true);
+				_gameUIContainer.SetActive(true);
+				_endScreenContainer.SetActive(false);
+				break;
+			case ScreenStates.EndScreen:
+				_menuContainer.SetActive(false);
+				_gameContainer.SetActive(false);
+				_gameUIContainer.SetActive(false);
+				_endScreenContainer.SetActive(true);
+				break;
+		}
 	}
 
 	public void HandleMoleHit(int index)

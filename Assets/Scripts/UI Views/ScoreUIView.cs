@@ -8,6 +8,6 @@ public class ScoreUIView : MonoBehaviour
 
 	public void UpdateScore(int score)
 	{
-		_scoreText.text = $"Score: {score}";
+		_scoreText.text = score.ToString();
 	}
 }
