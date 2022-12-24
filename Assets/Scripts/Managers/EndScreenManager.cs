@@ -4,7 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class EndScreenManager : MonoBehaviour
+public class EndScreenManager : MonoBehaviour, ISaveable
 {
 	[Header("UI Fields")]
 	[SerializeField]
@@ -56,27 +56,6 @@ public class EndScreenManager : MonoBehaviour
 		}
 	}
 
-	public object SaveState()
-	{
-		_highscoreList.Add(new HighscoreData
-		{
-			PlayerName = _playerName,
-			Score = _score
-		});
-
-		return _highscoreList;
-	}
-
-	public void LoadState(object state)
-	{
-		if(state is List<HighscoreData> data)
-		{
-			_highscoreList = data;
-		}
-
-		UpdateHighscoreList();
-	}
-
 	public void OnSubmitButtonClicked()
 	{
 		_submitButton.interactable = false;
@@ -90,10 +69,22 @@ public class EndScreenManager : MonoBehaviour
 		});
 		
 		UpdateHighscoreList();
+		
+		SaveLoadManager.instance.SaveGame();
+	}
+	
+	public void LoadData(GameData data)
+	{
+		_highscoreList = data.Highscores;
+	}
+
+	public void SaveData(ref GameData data)
+	{
+		data.Highscores = _highscoreList;
 	}
 
 	[Serializable]
-	private struct HighscoreData
+	public struct HighscoreData
 	{
 		public string PlayerName;
 		public int Score;
