@@ -1,29 +1,16 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
 {
-	private enum ScreenStates
-	{
-		StartScreen,
-		GameScreen,
-		EndScreen
-	}
+	[Header("Mole properties")]
+	[SerializeField]
+	private MoleHole _moleHolePrefab;
+	[SerializeField]
+	private List<Transform> _possibleMolePositions;
 	
-	[Header("Object Containers")]
-	[SerializeField]
-	private GameObject _menuContainer;
-	[SerializeField]
-	private GameObject _gameContainer;
-	[SerializeField]
-	private GameObject _gameUIContainer;
-	[SerializeField]
-	private GameObject _endScreenContainer;
-
-	[SerializeField, Space(5f)]
-	private List<Mole> _moles;
-
 	[Header("Gameplay values")]
 	[SerializeField, Tooltip("The number of hits needed to activate an extra mole.")]
 	private int _activateExtraMoleThreshold = 10;
@@ -31,32 +18,66 @@ public class GameManager : MonoBehaviour
 	private int _defaultScoreValue = 1;
 	[SerializeField]
 	private int _timePenaltyMissedMole = 2;
+	[SerializeField]
+	private int _molePositionsAmount = 10;
+	[SerializeField]
+	private float _playTimeSecs = 30f;
 
 	[Header("Other References")]
 	[SerializeField]
 	private UIViewsManager _uiManager;
 	[SerializeField]
-	private EndScreenManager _endScreenManager;
-	
-	private float _playTimeSecs = 30f;
-	private float _timeRemainingSecs;
+	private ScoreManager _scoreManager;
 
-	private int _score;
-	
+	private float _timeRemainingSecs;
 	private bool _playing = false;
 
+	private Transform[] _selectedMolePositions;
+	private List<Transform> _activeMolePositions = new List<Transform>();
+	
+	private List<MoleHole> _moleHoles = new List<MoleHole>();
 	private HashSet<Mole> _activeMoles = new HashSet<Mole>();
 
 	private void Start()
 	{
-		SetScreenState(ScreenStates.StartScreen);
-		
 		// If this threshold is set to 0 it will result in an error 
 		if(_activateExtraMoleThreshold <= 0)
 		{
-			Debug.LogWarning($"You have set the {nameof(_activateExtraMoleThreshold)} to '0' or less, resulting it in automatically being set to 1.");
+			Debug.LogWarning($"You have set the {nameof(_activateExtraMoleThreshold)} to '0' or less, resulting in it automatically being set to 1.");
 			_activateExtraMoleThreshold = 1;
 		}
+
+		// Can't have more moles than spawnpoints
+		if(_molePositionsAmount > _possibleMolePositions.Count)
+		{
+			Debug.LogWarning($"You have exceeded the maximum amount of {nameof(_molePositionsAmount)}, resulting in it automatically being set to the max amount of {_possibleMolePositions.Count}");
+			_molePositionsAmount = _possibleMolePositions.Count;
+		}
+		
+		// Copy the possible positions list to use the copy for creating a list of selected positions
+		List<Transform> copyOfPossiblePositions = _possibleMolePositions;
+		
+		// Randomly select positions for the moles to appear
+		//_selectedMolePositions = new Transform[_molePositionsAmount];
+		for(int i = 0; i < _molePositionsAmount; i++)
+		{
+			int index = Random.Range(0, copyOfPossiblePositions.Count);
+
+			Transform curPos = copyOfPossiblePositions[index];
+			MoleHole hole = Instantiate(_moleHolePrefab, curPos);
+			_moleHoles.Add(hole);
+			
+			copyOfPossiblePositions.RemoveAt(index);
+		}
+		
+		// Reset the game's state
+		_activeMolePositions.Clear();
+		_timeRemainingSecs = _playTimeSecs;
+		_scoreManager.Reset();
+		_uiManager.UpdateScore(ScoreManager.Score);
+		_uiManager.UpdateTimer(_timeRemainingSecs);
+		
+		_playing = true;
 	}
 
 	private void Update()
@@ -70,7 +91,7 @@ public class GameManager : MonoBehaviour
 		if(_timeRemainingSecs < 0)
 		{
 			_timeRemainingSecs = 0;
-			StopGame();
+			TimerEnded();
 			
 			// It is pointless to continue trying to activate new moles, since we have stopped playing
 			return;
@@ -78,96 +99,55 @@ public class GameManager : MonoBehaviour
 		_uiManager.UpdateTimer(_timeRemainingSecs);
 
 		// Activate more moles every X hits
-		if(_activeMoles.Count <= _score / _activateExtraMoleThreshold)
+		if(_activeMoles.Count <= ScoreManager.Score / _activateExtraMoleThreshold)
 		{
-			int index = Random.Range(0, _moles.Count);
-			// For now doens't matter if that mole is already active.
-			// In that case, a new random mole will be tried in the next frame
-			if(!_activeMoles.Contains(_moles[index]))
+			int index = Random.Range(0, _moleHoles.Count);
+			// For now doesn't matter if that mole is already active.
+			// In that case, a new position will be tried in the next frame
+			if(!_activeMoles.Contains(_moleHoles[index].Mole))
 			{
-				Mole newMole = _moles[index];
-				_activeMoles.Add(newMole);
-				newMole.Activate();
+				MoleHole curHole = _moleHoles[index];
+				curHole.CreateMole(index);
+				Mole mole = curHole.Mole;
+				mole.Activate();
+				mole.MoleHitEvent += OnMoleHit;
+				mole.MoleMisEvent += OnMoleMis;
+
+				_activeMoles.Add(mole);
 			}
 		}
 	}
 
-	private void StartGame()
+	private void TimerEnded()
 	{
-		// Make sure all mole are hidden and have a unique identifier
-		for(int i = 0; i < _moles.Count; i++)
+		for(int i = 0; i < _moleHoles.Count; i++)
 		{
-			_moles[i].Initialize(this, i);
+			_moleHoles[i].RemoveMole();
 		}
 		
-		// Reset the game's state
-		_activeMoles.Clear();
-		_timeRemainingSecs = _playTimeSecs;
-		_score = 0;
-		_uiManager.UpdateScore(_score);
-		_uiManager.UpdateTimer(_timeRemainingSecs);
-		
-		SetScreenState(ScreenStates.GameScreen);
-		
-		_playing = true;
-	}
-
-	private void StopGame()
-	{
 		_playing = false;
-		
-		for(var i = 0; i < _moles.Count; i++)
-		{
-			_moles[i].Deactivate();
-			_activeMoles.Remove(_moles[i]);
-		}
-		
-		_endScreenManager.Initialize(_score);
-		SetScreenState(ScreenStates.EndScreen);
+		SceneManager.LoadScene(ScreenNames.EndScreenName);
 	}
 
-	private void SetScreenState(ScreenStates screenState)
+	private void OnMoleHit(int identifier)
 	{
-		switch(screenState)
-		{
-			case ScreenStates.StartScreen:
-				_menuContainer.SetActive(true);
-				_gameContainer.SetActive(false);
-				_gameUIContainer.SetActive(false);
-				_endScreenContainer.SetActive(false);
-				break;
-			case ScreenStates.GameScreen:
-				_menuContainer.SetActive(false);
-				_gameContainer.SetActive(true);
-				_gameUIContainer.SetActive(true);
-				_endScreenContainer.SetActive(false);
-				break;
-			case ScreenStates.EndScreen:
-				_menuContainer.SetActive(false);
-				_gameContainer.SetActive(false);
-				_gameUIContainer.SetActive(false);
-				_endScreenContainer.SetActive(true);
-				break;
-		}
-	}
-
-	public void HandleMoleHit(int index)
-	{
-		_score += _defaultScoreValue;
-		_uiManager.UpdateScore(_score);
-		_activeMoles.Remove(_moles[index]);
-	}
-
-	public void HandleMoleMiss(int index, bool isMole)
-	{
-		_timeRemainingSecs -= _timePenaltyMissedMole;
-		_activeMoles.Remove(_moles[index]);
+		_moleHoles[identifier].Mole.MoleHitEvent -= OnMoleHit;
 		
-		// For later: reset streaks
+		_scoreManager.AddScore(_defaultScoreValue);
+		_uiManager.UpdateScore(ScoreManager.Score);
+        
+		_activeMoles.Remove(_moleHoles[identifier].Mole);
+		_moleHoles[identifier].RemoveMole();
 	}
 	
-	public void OnStartButtonClicked()
+	private void OnMoleMis(int identifier)
 	{
-		StartGame();
+		_moleHoles[identifier].Mole.MoleMisEvent -= OnMoleMis;
+		
+		_timeRemainingSecs -= _timePenaltyMissedMole;
+		
+		_activeMoles.Remove(_moleHoles[identifier].Mole);
+		_moleHoles[identifier].RemoveMole();
+		// For later: reset streaks
 	}
 }

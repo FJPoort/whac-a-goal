@@ -1,7 +1,7 @@
-using System;
 using System.Linq;
 using UnityEngine;
 
+[DefaultExecutionOrder(-1)]
 public class SaveLoadManager : MonoBehaviour
 {
 	private GameData _gameData;

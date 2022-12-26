@@ -12,8 +12,6 @@ public class Mole : MonoBehaviour
 	[SerializeField]
 	private BoxCollider2D _boxCollider;
 
-	private GameManager _gameManager;
-	
 	// The offset of the sprite to hide it
 	private readonly Vector2 _startPosition = new Vector2(0f, -1.80f);
 	private readonly Vector2 _endPosition = new Vector2(0f, 0.3f);
@@ -27,9 +25,17 @@ public class Mole : MonoBehaviour
 	private Vector2 _boxOffsetHidden;
 	private Vector2 _boxSizeHidden;
 
-	private int _moleIndex = 0;
-	
 	private bool _canHit = true;
+
+	private int _identifier;
+
+	public delegate void MoleHitEventHandler(int identifier);
+	public event MoleHitEventHandler MoleHitEvent;
+	private void FireMoleHitEvent(int id) => MoleHitEvent?.Invoke(id);
+	
+	public delegate void MoleMisEventHandler(int identifier);
+	public event MoleMisEventHandler MoleMisEvent;
+	private void FireMoleMisEvent(int id) => MoleMisEvent?.Invoke(id);
 
 	private void Awake()
 	{
@@ -48,10 +54,10 @@ public class Mole : MonoBehaviour
 	/// <param name="start"></param>
 	/// <param name="end"></param>
 	/// <returns></returns>
-	private IEnumerator ShowHide(Vector2 start, Vector2 end)
+	private IEnumerator ShowHide()
 	{
 		// Snap to start position
-		transform.localPosition = start;
+		transform.localPosition = _startPosition;
 		_boxCollider.offset = _boxOffsetHidden;
 		_boxCollider.size = _boxSizeHidden;
 		
@@ -59,7 +65,7 @@ public class Mole : MonoBehaviour
 		float elapsed = 0f;
 		while(elapsed < _animDurationSecs)
 		{
-			transform.localPosition = Vector2.Lerp(start, end, elapsed / _animDurationSecs);
+			transform.localPosition = Vector2.Lerp(_startPosition, _endPosition, elapsed / _animDurationSecs);
 			_boxCollider.offset = Vector2.Lerp(_boxOffsetHidden, _boxOffset, elapsed / _animDurationSecs);
 			_boxCollider.size = Vector2.Lerp(_boxSizeHidden, _boxSize, elapsed / _animDurationSecs);
 			elapsed += Time.deltaTime;
@@ -67,7 +73,7 @@ public class Mole : MonoBehaviour
 		}
 
 		// Snap to end position
-		transform.localPosition = end;
+		transform.localPosition = _endPosition;
 		_boxCollider.offset = _boxOffset;
 		_boxCollider.size = _boxSize;
 
@@ -78,7 +84,7 @@ public class Mole : MonoBehaviour
 		elapsed = 0f;
 		while(elapsed < _animDurationSecs)
 		{
-			transform.localPosition = Vector2.Lerp(end, start, elapsed / _animDurationSecs);
+			transform.localPosition = Vector2.Lerp(_endPosition, _startPosition, elapsed / _animDurationSecs);
 			_boxCollider.offset = Vector2.Lerp(_boxOffset, _boxOffsetHidden, elapsed / _animDurationSecs);
 			_boxCollider.size = Vector2.Lerp(_boxSize, _boxSizeHidden, elapsed / _animDurationSecs);
 			elapsed += Time.deltaTime;
@@ -86,7 +92,7 @@ public class Mole : MonoBehaviour
 		}
 		
 		// Snap to start position
-		transform.localPosition = start;
+		transform.localPosition = _startPosition;
 		_boxCollider.offset = _boxOffsetHidden;
 		_boxCollider.size = _boxSizeHidden;
 		
@@ -95,7 +101,7 @@ public class Mole : MonoBehaviour
 		{
 			_canHit = false;
 			// TODO, bool parameter is hardcoded
-			_gameManager.HandleMoleMiss(_moleIndex, true);
+			FireMoleMisEvent(_identifier);
 		}
 	}
 
@@ -109,15 +115,9 @@ public class Mole : MonoBehaviour
 		Hide();
 	}
 
-	/// <summary>
-	/// Hides the mole and gives it a unique identifier.
-	/// </summary>
-	/// <param name="gameManager">A reference to the <see cref="GameManager"/></param>
-	/// <param name="moleIndex">The index to be used as unique identifier</param>
-	public void Initialize(GameManager gameManager, int moleIndex)
+	public void Initialize(int identifier)
 	{
-		_gameManager = gameManager;
-		_moleIndex = moleIndex;
+		_identifier = identifier;
 		Hide();
 	}
 	
@@ -128,7 +128,7 @@ public class Mole : MonoBehaviour
 	{
 		_canHit = true;
 		_spriteRenderer.sprite = _mole;
-		StartCoroutine(ShowHide(_startPosition, _endPosition));
+		StartCoroutine(ShowHide());
 	}
 
 	public void Deactivate()
@@ -151,11 +151,13 @@ public class Mole : MonoBehaviour
 	{
 		if(_canHit)
 		{
+			_canHit = false;
+
 			_spriteRenderer.sprite = _moleHit;
 			StopAllCoroutines();
 			StartCoroutine(QuickHide());
-			_gameManager.HandleMoleHit(_moleIndex);
-			_canHit = false;
+			
+			FireMoleHitEvent(_identifier);
 		}
 	}
 }

@@ -4,10 +4,10 @@ using System.Collections.Generic;
 [Serializable]
 public class GameData
 {
-	public List<EndScreenManager.HighscoreData> Highscores;
+	public List<HighscoreTable.HighscoreData> Highscores;
 
 	public GameData()
 	{
-		Highscores = new List<EndScreenManager.HighscoreData>();
+		Highscores = new List<HighscoreTable.HighscoreData>();
 	}
 }
