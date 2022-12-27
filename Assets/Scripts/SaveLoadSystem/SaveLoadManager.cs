@@ -4,10 +4,20 @@ using UnityEngine;
 [DefaultExecutionOrder(-1)]
 public class SaveLoadManager : MonoBehaviour
 {
+	#region Variables
+
 	private GameData _gameData;
 	private FileDataHandler _fileDataHandler;
+
+	#endregion
+	
+	#region Properties
 	
 	public static SaveLoadManager instance { get; private set; }
+	
+	#endregion
+
+	#region Unity Event Functions
 
 	private void Awake()
 	{
@@ -26,11 +36,21 @@ public class SaveLoadManager : MonoBehaviour
 		LoadGame();
 	}
 
+	#endregion
+
+	#region Public Methods
+
+	/// <summary>
+	/// Creates a clean storage object of <see cref="GameData"/>
+	/// </summary>
 	public void NewGame()
 	{
 		_gameData = new GameData();
 	}
 
+	/// <summary>
+	/// Goes through all objects that inherit <see cref="ISaveable"/> and calls <see cref="ISaveable.LoadData"/>
+	/// </summary>
 	public void LoadGame()
 	{
 		// Load saved data from a file using the data handler
@@ -48,6 +68,9 @@ public class SaveLoadManager : MonoBehaviour
 		}
 	}
 
+	/// <summary>
+	/// Goes through all objects that inherit <see cref="ISaveable"/> and calls <see cref="ISaveable.SaveData"/>
+	/// </summary>
 	public void SaveGame()
 	{
 		// Pass the data to other scripts so they can update it
@@ -59,4 +82,6 @@ public class SaveLoadManager : MonoBehaviour
 		// Save the data to a file using the data handler
 		_fileDataHandler.Save(_gameData);
 	}
+
+	#endregion
 }

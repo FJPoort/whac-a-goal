@@ -1,13 +1,17 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 public class UIViewsManager : MonoBehaviour
 {
-	[SerializeField]
-	private ScoreUIView _scoreView;
+	#region Editor Variables
 
 	[SerializeField]
+	private ScoreUIView _scoreView;
+	[SerializeField]
 	private TimerUIView _timerView;
+
+	#endregion
+
+	#region Public Methods
 
 	public void UpdateScore(int score)
 	{
@@ -18,4 +22,6 @@ public class UIViewsManager : MonoBehaviour
 	{
 		_timerView.UpdateTimerText(remainingTime);
 	}
+
+	#endregion
 }

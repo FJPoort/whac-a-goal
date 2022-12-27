@@ -6,6 +6,7 @@ using Random = UnityEngine.Random;
 public class GameManager : MonoBehaviour
 {
 	#region Editor Variables
+	
 	[Header("Mole properties")]
 	[SerializeField]
 	private MoleHole _moleHolePrefab;
@@ -31,9 +32,11 @@ public class GameManager : MonoBehaviour
 	private UIViewsManager _uiManager;
 	[SerializeField]
 	private ScoreManager _scoreManager;
+	
 	#endregion
 
 	#region Variables
+	
 	private readonly List<MoleHole> _moleHoles = new List<MoleHole>();
 	private readonly List<Mole> _activeMoles = new List<Mole>();
 
@@ -43,9 +46,11 @@ public class GameManager : MonoBehaviour
 	private bool _playing = false;
 	private int _scoreStreak = 0;
 	private int _bonus = 0;
-	#endregion
 	
+	#endregion
+
 	#region Unity Event Functions
+	
 	private void Start()
 	{
 		// If this threshold is set to 0 it will result in an error 
@@ -80,7 +85,7 @@ public class GameManager : MonoBehaviour
 		
 		// Reset the game's state
 		_timeRemainingSecs = _playTimeSecs;
-		_scoreManager.Reset();
+		_scoreManager.ResetScore();
 		_uiManager.UpdateScore(ScoreManager.Score);
 		_uiManager.UpdateTimer(_timeRemainingSecs);
 		
@@ -124,11 +129,14 @@ public class GameManager : MonoBehaviour
 			}
 		}
 	}
+	
 	#endregion
 
 	#region Private Methods
+	
 	private void TimerEnded()
 	{
+		// Clear up all active moles
 		for(int i = 0; i < _moleHoles.Count; i++)
 		{
 			_moleHoles[i].HandleMissedMole();
@@ -142,6 +150,7 @@ public class GameManager : MonoBehaviour
 	{
 		_moleHoles[identifier].Mole.MoleHitEvent -= OnMoleHit;
 
+		// Handle scores
 		_scoreStreak += 1;
 		if(_scoreStreak % _scoreBonusThreshold == 0)
 		{
@@ -151,6 +160,7 @@ public class GameManager : MonoBehaviour
 		_scoreManager.AddScore(_defaultScoreValue + _bonus);
 		_uiManager.UpdateScore(ScoreManager.Score);
         
+		// Clear mole so it can appear again
 		_activeMoles.Remove(_moleHoles[identifier].Mole);
 		_moleHoles[identifier].HandleHitMole();
 	}
@@ -159,13 +169,15 @@ public class GameManager : MonoBehaviour
 	{
 		_moleHoles[identifier].Mole.MoleMisEvent -= OnMoleMis;
 
+		// Reset streak and bonus, and give time penalty
 		_scoreStreak = 0;
 		_bonus = 0;
 		_timeRemainingSecs -= _timePenaltyMissedMole;
 		
+		// Clear mole so it can appear again
 		_activeMoles.Remove(_moleHoles[identifier].Mole);
 		_moleHoles[identifier].HandleMissedMole();
-		// For later: reset streaks
 	}
+	
 	#endregion
 }

@@ -3,6 +3,8 @@ using UnityEngine;
 
 public class Mole : MonoBehaviour
 {
+	#region Editor Variables
+
 	[SerializeField]
 	private Sprite _mole;
 	[SerializeField]
@@ -12,6 +14,11 @@ public class Mole : MonoBehaviour
 	[SerializeField]
 	private BoxCollider2D _boxCollider;
 
+	#endregion
+
+	#region Variables
+
+	// Mole show/hide animation variables
 	// The offset of the sprite to hide it
 	private readonly Vector2 _startPosition = new Vector2(0f, -1.80f);
 	private readonly Vector2 _endPosition = new Vector2(0f, 0.3f);
@@ -26,8 +33,11 @@ public class Mole : MonoBehaviour
 	private Vector2 _boxSizeHidden;
 
 	private bool _canHit = true;
-
 	private int _identifier;
+
+	#endregion
+
+	#region Events
 
 	public delegate void MoleHitEventHandler(int identifier);
 	public event MoleHitEventHandler MoleHitEvent;
@@ -37,6 +47,10 @@ public class Mole : MonoBehaviour
 	public event MoleMisEventHandler MoleMisEvent;
 	private void FireMoleMisEvent(int id) => MoleMisEvent?.Invoke(id);
 
+	#endregion
+
+	#region Unity Event Functions
+
 	private void Awake()
 	{
 		_boxOffset = _boxCollider.offset;
@@ -44,6 +58,55 @@ public class Mole : MonoBehaviour
 		_boxOffsetHidden = new Vector2(_boxOffset.x, -_startPosition.y / 2f);
 		_boxSizeHidden = new Vector2(_boxSize.x, 0f);
 	}
+	
+	private void OnMouseDown()
+	{
+		if(_canHit)
+		{
+			_canHit = false;
+			_spriteRenderer.sprite = _moleHit;
+			
+			StopAllCoroutines();
+			StartCoroutine(QuickHide());
+			FireMoleHitEvent(_identifier);
+		}
+	}
+
+	#endregion
+
+	#region Public Methods
+	
+	public void Initialize(int identifier)
+	{
+		_identifier = identifier;
+		
+		transform.localPosition = _startPosition;
+		_boxCollider.offset = _boxOffsetHidden;
+		_boxCollider.size = _boxSizeHidden;
+	}
+	
+	/// <summary>
+	/// Call this function to start mole's show/hide behaviour
+	/// </summary>
+	public void Activate()
+	{
+		_canHit = true;
+		_spriteRenderer.sprite = _mole;
+		StartCoroutine(ShowHide());
+	}
+
+	/// <summary>
+	/// Stops mole from being hittable and stops all coroutines
+	/// </summary>
+	public void Deactivate()
+	{
+		_canHit = false;
+		StopAllCoroutines();
+	}
+	
+	#endregion
+
+	#region Private Methods
 
 	/// <summary>
 	/// The mole's Show/Hide animation routine.
@@ -51,8 +114,6 @@ public class Mole : MonoBehaviour
 	/// then keeps it visible for an other amount of seconds determined by <see cref="_fullyVisibleSecs"/>,
 	/// to finally hide the mole again in the amount of seconds determined by <see cref="_animDurationSecs"/>.
 	/// </summary>
-	/// <param name="start"></param>
-	/// <param name="end"></param>
 	/// <returns></returns>
 	private IEnumerator ShowHide()
 	{
@@ -105,7 +166,7 @@ public class Mole : MonoBehaviour
 	}
 
 	/// <summary>
-	/// Let's the mole hide instantly after an amount of time determined by <see cref="_waitBeforeQuickHideSecs"/>
+	/// Removes the mole instantly after an amount of time determined by <see cref="_waitBeforeQuickHideSecs"/>
 	/// </summary>
 	/// <returns></returns>
 	private IEnumerator QuickHide()
@@ -114,42 +175,5 @@ public class Mole : MonoBehaviour
 		Destroy(gameObject);
 	}
 
-	public void Initialize(int identifier)
-	{
-		_identifier = identifier;
-		
-		transform.localPosition = _startPosition;
-		_boxCollider.offset = _boxOffsetHidden;
-		_boxCollider.size = _boxSizeHidden;
-	}
-	
-	/// <summary>
-	/// Call this function to start mole's show/hide behaviour
-	/// </summary>
-	public void Activate()
-	{
-		_canHit = true;
-		_spriteRenderer.sprite = _mole;
-		StartCoroutine(ShowHide());
-	}
-
-	public void Deactivate()
-	{
-		_canHit = false;
-		StopAllCoroutines();
-	}
-
-	private void OnMouseDown()
-	{
-		if(_canHit)
-		{
-			_canHit = false;
-
-			_spriteRenderer.sprite = _moleHit;
-			StopAllCoroutines();
-			StartCoroutine(QuickHide());
-			
-			FireMoleHitEvent(_identifier);
-		}
-	}
+	#endregion
 }

@@ -5,6 +5,8 @@ using UnityEngine.UI;
 
 public class EndScreenManager : MonoBehaviour
 {
+	#region Editor Variables
+	
 	[Header("Score UI Fields")]
 	[SerializeField]
 	private TextMeshProUGUI _scoreField;
@@ -20,10 +22,18 @@ public class EndScreenManager : MonoBehaviour
 	[Header("RetryQuestionPopup")]
 	[SerializeField]
 	private GameObject _retryQuestionPopup;
+	
+	#endregion
 
+	#region Variables
+	
 	private string _playerName;
 	private bool _savedScore = false;
+	
+	#endregion
 
+	#region Unity Event Functions
+	
 	private void Start()
 	{
 		_retryQuestionPopup.SetActive(false);
@@ -37,17 +47,21 @@ public class EndScreenManager : MonoBehaviour
 		_scoreField.text = ScoreManager.Score.ToString();
 	}
 
-	private void OnApplicationPause(bool pauseStatus)
+	private void OnApplicationQuit()
 	{
-		if(pauseStatus)
+		if(!_savedScore && ScoreManager.HasScore)
 		{
-			if(ScoreManager.HasScore && !_savedScore)
-			{
-				_highscoreTable.AddEntry(string.IsNullOrWhiteSpace(_playerNameInputField.text) ? "No Name" : _playerNameInputField.text, ScoreManager.Score);
-			}
-			
-			SceneManager.LoadScene(ScreenNames.StartScreenName);
+			_highscoreTable.AddEntry(string.IsNullOrWhiteSpace(_playerNameInputField.text) ? "No Name" : _playerNameInputField.text, ScoreManager.Score);
 		}
+	}
+	
+	#endregion
+	
+	#region Public Methods
+	
+	public void OnInputChanged()
+	{
+		_submitButton.interactable = ScoreManager.HasScore && !string.IsNullOrWhiteSpace(_playerNameInputField.text);
 	}
 
 	public void OnSubmitButtonClicked()
@@ -83,14 +97,15 @@ public class EndScreenManager : MonoBehaviour
 	{
 		_retryQuestionPopup.SetActive(false);
 	}
-
-	public void OnInputChanged()
-	{
-		_submitButton.interactable = ScoreManager.HasScore && !string.IsNullOrWhiteSpace(_playerNameInputField.text);
-	}
+	
+	#endregion
+	
+	#region Private Methods
 
 	private void LoadGameScene()
 	{
 		SceneManager.LoadScene(ScreenNames.GameScreenName);
 	}
+
+	#endregion
 }

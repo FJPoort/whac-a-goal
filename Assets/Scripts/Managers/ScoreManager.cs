@@ -1,10 +1,24 @@
 using UnityEngine;
 
+/// <summary>
+/// Use to keep track of score
+/// </summary>
 public class ScoreManager : MonoBehaviour
 {
+	#region Properties
+	
 	public static int Score { get; private set; }
+	
+	public static bool HasScore => Score > 0;
+	
+	#endregion
 
-	public void Reset()
+	#region public Methods
+	
+	/// <summary>
+	/// Reset score to 0
+	/// </summary>
+	public void ResetScore()
 	{
 		Score = 0;
 	}
@@ -17,6 +31,6 @@ public class ScoreManager : MonoBehaviour
 	{
 		Score += amountToAdd;
 	}
-
-	public static bool HasScore => Score > 0;
+	
+	#endregion
 }

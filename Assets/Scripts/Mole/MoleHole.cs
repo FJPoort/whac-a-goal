@@ -2,10 +2,20 @@ using UnityEngine;
 
 public class MoleHole : MonoBehaviour
 {
+	#region Editor Variables
+	
 	[SerializeField]
 	private Mole _molePrefab;
+	
+	#endregion
+
+	#region Properties
 
 	public Mole Mole { get; private set; }
+
+	#endregion
+
+	#region Public Methods
 
 	public void CreateMole(int identifier)
 	{
@@ -22,11 +32,6 @@ public class MoleHole : MonoBehaviour
 
 	public void HandleMissedMole()
 	{
-		DestroyMole();
-	}
-
-	private void DestroyMole()
-	{
 		if(Mole == null)
 		{
 			return;
@@ -36,4 +41,6 @@ public class MoleHole : MonoBehaviour
 		Destroy(Mole.gameObject);
 		Mole = null;
 	}
+
+	#endregion
 }

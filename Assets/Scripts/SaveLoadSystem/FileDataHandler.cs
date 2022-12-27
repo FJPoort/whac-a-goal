@@ -2,14 +2,23 @@ using System;
 using System.IO;
 using UnityEngine;
 
+/// <summary>
+/// Reads from and writes to the save file
+/// </summary>
 public class FileDataHandler
 {
+	#region Variables
+
 	private readonly string _saveFilePath;
 
+	#endregion
+	
 	public FileDataHandler()
 	{
 		_saveFilePath = Path.Combine(Application.persistentDataPath, "SaveData.json");
 	}
+	
+	#region Public Methods
 
 	public GameData Load()
 	{
@@ -20,7 +29,7 @@ public class FileDataHandler
 			{
 
 				// Load json data into a string
-				string data = string.Empty;
+				string data;
 				using(FileStream stream = new FileStream(_saveFilePath, FileMode.Open))
 				{
 					using(StreamReader reader = new StreamReader(stream))
@@ -64,4 +73,6 @@ public class FileDataHandler
 			Debug.LogError($"Saving file went wrong for: {_saveFilePath}. Error:\n{e.Message}\nStacktrace: {e.StackTrace}");
 		}
 	}
+	
+	#endregion
 }
