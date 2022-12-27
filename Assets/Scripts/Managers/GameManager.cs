@@ -16,15 +16,15 @@ public class GameManager : MonoBehaviour
 	[SerializeField]
 	private int _molePositionsAmount = 10;
 	[SerializeField]
-	private float _playTimeSecs = 30f;
+	private float _playTimeSecs = 45f;
 	[SerializeField]
 	private int _defaultScoreValue = 1;
 	[SerializeField]
 	private int _timePenaltyMissedMole = 2;
 	[SerializeField, Tooltip("The number of hits needed to activate an extra mole.")]
-	private int _activateExtraMoleThreshold = 10;
+	private int _activateExtraMoleThreshold = 15;
 	[SerializeField, Tooltip("The number of consecutive hits needed to add a bonus to the score.")]
-	private int _scoreBonusThreshold = 5;
+	private int _scoreBonusThreshold = 7;
 
 	[Header("Other References")]
 	[SerializeField]
