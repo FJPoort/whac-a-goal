@@ -23,7 +23,7 @@ public class HighscoreTable : MonoBehaviour, ISaveable
 		
 		SaveLoadManager.instance.SaveGame();
 	}
-	
+
 	/// <summary>
 	/// Updates the highscore table.
 	/// </summary>
@@ -58,7 +58,7 @@ public class HighscoreTable : MonoBehaviour, ISaveable
 	{
 		data.Highscores = _highscoreList;
 	}
-	
+
 	[Serializable]
 	public struct HighscoreData
 	{

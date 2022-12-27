@@ -17,4 +17,6 @@ public class ScoreManager : MonoBehaviour
 	{
 		Score += amountToAdd;
 	}
+
+	public static bool HasScore => Score > 0;
 }
