@@ -5,6 +5,7 @@ using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
 {
+	#region Editor Variables
 	[Header("Mole properties")]
 	[SerializeField]
 	private MoleHole _moleHolePrefab;
@@ -12,32 +13,39 @@ public class GameManager : MonoBehaviour
 	private List<Transform> _possibleMolePositions;
 	
 	[Header("Gameplay values")]
-	[SerializeField, Tooltip("The number of hits needed to activate an extra mole.")]
-	private int _activateExtraMoleThreshold = 10;
-	[SerializeField]
-	private int _defaultScoreValue = 1;
-	[SerializeField]
-	private int _timePenaltyMissedMole = 2;
 	[SerializeField]
 	private int _molePositionsAmount = 10;
 	[SerializeField]
 	private float _playTimeSecs = 30f;
+	[SerializeField]
+	private int _defaultScoreValue = 1;
+	[SerializeField]
+	private int _timePenaltyMissedMole = 2;
+	[SerializeField, Tooltip("The number of hits needed to activate an extra mole.")]
+	private int _activateExtraMoleThreshold = 10;
+	[SerializeField, Tooltip("The number of consecutive hits needed to add a bonus to the score.")]
+	private int _scoreBonusThreshold = 5;
 
 	[Header("Other References")]
 	[SerializeField]
 	private UIViewsManager _uiManager;
 	[SerializeField]
 	private ScoreManager _scoreManager;
+	#endregion
 
-	private float _timeRemainingSecs;
-	private bool _playing = false;
+	#region Variables
+	private readonly List<MoleHole> _moleHoles = new List<MoleHole>();
+	private readonly List<Mole> _activeMoles = new List<Mole>();
 
 	private Transform[] _selectedMolePositions;
-	private List<Transform> _activeMolePositions = new List<Transform>();
 	
-	private List<MoleHole> _moleHoles = new List<MoleHole>();
-	private HashSet<Mole> _activeMoles = new HashSet<Mole>();
-
+	private float _timeRemainingSecs;
+	private bool _playing = false;
+	private int _scoreStreak = 0;
+	private int _bonus = 0;
+	#endregion
+	
+	#region Unity Event Functions
 	private void Start()
 	{
 		// If this threshold is set to 0 it will result in an error 
@@ -71,7 +79,6 @@ public class GameManager : MonoBehaviour
 		}
 		
 		// Reset the game's state
-		_activeMolePositions.Clear();
 		_timeRemainingSecs = _playTimeSecs;
 		_scoreManager.Reset();
 		_uiManager.UpdateScore(ScoreManager.Score);
@@ -117,14 +124,16 @@ public class GameManager : MonoBehaviour
 			}
 		}
 	}
+	#endregion
 
+	#region Private Methods
 	private void TimerEnded()
 	{
 		for(int i = 0; i < _moleHoles.Count; i++)
 		{
-			_moleHoles[i].RemoveMole();
+			_moleHoles[i].HandleMissedMole();
 		}
-		
+
 		_playing = false;
 		SceneManager.LoadScene(ScreenNames.EndScreenName);
 	}
@@ -132,22 +141,31 @@ public class GameManager : MonoBehaviour
 	private void OnMoleHit(int identifier)
 	{
 		_moleHoles[identifier].Mole.MoleHitEvent -= OnMoleHit;
-		
-		_scoreManager.AddScore(_defaultScoreValue);
+
+		_scoreStreak += 1;
+		if(_scoreStreak % _scoreBonusThreshold == 0)
+		{
+			_bonus += 1;
+
+		}
+		_scoreManager.AddScore(_defaultScoreValue + _bonus);
 		_uiManager.UpdateScore(ScoreManager.Score);
         
 		_activeMoles.Remove(_moleHoles[identifier].Mole);
-		_moleHoles[identifier].RemoveMole();
+		_moleHoles[identifier].HandleHitMole();
 	}
 	
 	private void OnMoleMis(int identifier)
 	{
 		_moleHoles[identifier].Mole.MoleMisEvent -= OnMoleMis;
-		
+
+		_scoreStreak = 0;
+		_bonus = 0;
 		_timeRemainingSecs -= _timePenaltyMissedMole;
 		
 		_activeMoles.Remove(_moleHoles[identifier].Mole);
-		_moleHoles[identifier].RemoveMole();
+		_moleHoles[identifier].HandleMissedMole();
 		// For later: reset streaks
 	}
+	#endregion
 }
