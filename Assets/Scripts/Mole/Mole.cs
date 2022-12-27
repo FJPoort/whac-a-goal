@@ -16,7 +16,7 @@ public class Mole : MonoBehaviour
 	private readonly Vector2 _startPosition = new Vector2(0f, -1.80f);
 	private readonly Vector2 _endPosition = new Vector2(0f, 0.3f);
 	private float _animDurationSecs = 0.5f;
-	private float _fullyVisibleSecs = 1f;
+	private float _fullyVisibleSecs = 1.3f;
 	private float _waitBeforeQuickHideSecs = 0.25f;
 	
 	// Collider vars
@@ -100,7 +100,6 @@ public class Mole : MonoBehaviour
 		if(_canHit)
 		{
 			_canHit = false;
-			// TODO, bool parameter is hardcoded
 			FireMoleMisEvent(_identifier);
 		}
 	}
@@ -112,13 +111,16 @@ public class Mole : MonoBehaviour
 	private IEnumerator QuickHide()
 	{
 		yield return new WaitForSeconds(_waitBeforeQuickHideSecs);
-		Hide();
+		Destroy(gameObject);
 	}
 
 	public void Initialize(int identifier)
 	{
 		_identifier = identifier;
-		Hide();
+		
+		transform.localPosition = _startPosition;
+		_boxCollider.offset = _boxOffsetHidden;
+		_boxCollider.size = _boxSizeHidden;
 	}
 	
 	/// <summary>
@@ -135,16 +137,6 @@ public class Mole : MonoBehaviour
 	{
 		_canHit = false;
 		StopAllCoroutines();
-	}
-
-	/// <summary>
-	/// Instantly hides the mole
-	/// </summary>
-	private void Hide()
-	{
-		transform.localPosition = _startPosition;
-		_boxCollider.offset = _boxOffsetHidden;
-		_boxCollider.size = _boxSizeHidden;
 	}
 
 	private void OnMouseDown()

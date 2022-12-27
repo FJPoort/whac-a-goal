@@ -13,7 +13,14 @@ public class MoleHole : MonoBehaviour
 		Mole.Initialize(identifier);
 	}
 
-	public void RemoveMole()
+	public void HandleHitMole()
+	{
+		// Mole's gameobject is being destroyed after hit in Mole.cs
+		// so we only need to null the reference to it here
+		Mole = null;
+	}
+
+	public void HandleMissedMole()
 	{
 		DestroyMole();
 	}
